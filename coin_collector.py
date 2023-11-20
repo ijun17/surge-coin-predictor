@@ -7,52 +7,58 @@ import requests
 
 
 # 필요한 폴더 생성
-folder_paths = ["minutes/60","minutes/240","days","weeks","months"]
-for path in folder_paths:
-    if not os.path.exists("coin/"+path):
-        os.makedirs("coin/"+path)
+BASE_PATH = "coin/raw/"
+TYPES = ["minutes/60","minutes/240","days","weeks"]
+[os.makedirs(BASE_PATH + path) for path in TYPES if not os.path.exists(BASE_PATH + path)]
 
 def req(url):
     headers = {"accept": "application/json"}
     response = requests.get(url, headers=headers)
     return pandas.DataFrame(json.loads(response.text))
 
-DATES=["2023-10-10 14:30:00"]
-PATH=folder_paths[3]
-COUNT=200
 
-for i in range(20):
-    date_format = "%Y-%m-%d %H:%M:%S"
-    next_date = datetime.strptime(DATES[i], date_format) - timedelta(weeks=200)
-    DATES.append(next_date.strftime(date_format))
-
-
-def collectCoin(start_coin_index = 0):
-    target_coins = pandas.read_csv("target_coins.csv")
-    coins=target_coins["market"].tolist()
-    request_count=0 # 업비트 API 초당 5번, 분당 100번 요청 가능
-    coin_index = start_coin_index
-    for coin in coins[start_coin_index:]: 
+def collectCoin(coins,type):
+    COUNT=200
+    # REST API 요청 수 제한은 IP 단위로 측정됩니다. 초당 10회
+    for i,coin in enumerate(coins): 
         df = pandas.DataFrame()
-        for date in DATES:
+        date = "2023-10-10T14:30:00"
+        while True:
             # 코인 데이터 요청
-            res = req(f"https://api.upbit.com/v1/candles/{PATH}?market={coin}&to={date}&count={COUNT}")
+            res = req(f"https://api.upbit.com/v1/candles/{type}?market={coin}&to={date}&count={COUNT}")
             df = pandas.concat([df,res])
-
-            # 요청 카운트 계산(5번 연속으로 요청했다면 3초 쉼)
-            request_count+=1
-            if(request_count % 5 == 0):
-                time.sleep(2)
-
-            # 과거 날짜의 데이터가 더이상 없다면 다음 코인으로
-            if df.shape[0] <COUNT :
+            # time.sleep(0.1)# 초당 10회
+            if res.shape[0] <COUNT :
                 break
-        
-        df.to_csv(f"coin/{PATH}/{coin}.csv", index=False)
-        print(coin_index, PATH, coin, "코인 로딩 완료")
-        coin_index+=1
+            date = res["candle_date_time_utc"].iloc[-1]
+        df.to_csv(BASE_PATH+type+"/"+coin+".csv", index=False)
+        print(i, type, coin, "코인 로딩 완료")
 
-collectCoin()
+
+
+def verifyCoin(coins,type):
+    for i,coin in enumerate(coins):
+        date_format = "%Y-%m-%dT%H:%M:%S"  # 날짜 형식 지정
+        df_coin = pandas.read_csv(BASE_PATH+type+"/"+coin+".csv")
+        times = df_coin["candle_date_time_utc"]
+        prev_date = datetime.strptime(times[0], date_format)
+        TIME_DELTA = prev_date-datetime.strptime(times[1], date_format)
+        for j,t in enumerate(times[1:]):
+            cur_date = datetime.strptime(t, date_format)
+            td = prev_date - cur_date
+            if td != TIME_DELTA:
+                print("Missing:",coin,"At",j,"count",int(td/TIME_DELTA-1),"time",t)
+            prev_date=cur_date
+        print(i,coin,"검증완료 to",prev_date)
+
+
+
+if __name__ == "__main__":
+    df_coins = pandas.read_csv("coin/target_coins.csv")
+    coins=df_coins["market"]
+    # collectCoin(coins[52:], TYPES[1])
+    verifyCoin(coins, TYPES[1])
+
 
 """
 0 KRW-SNT 코인 로딩 완료
