@@ -15,6 +15,8 @@ def make_X1(df, A,B,C):
         df_pre_coin["change_trade_rate"] = df["candle_acc_trade_volume"]/df["candle_acc_trade_volume"].shift(-1)
     if C>0:
         df_pre_coin["price_diff"] = df["high_price"]/df["low_price"]
+    
+    # df_pre_coin["low_price"] = df["low_price"]/df["low_price"].shift(-1)
     return df_pre_coin
 
 def make_X2(df,N):
@@ -27,14 +29,14 @@ def make_X2(df,N):
 def make_y(rates,M,R):
     y = pd.Series([0]*len(rates))
     for j in range(M,len(rates)):
-        if(rates.iloc[j-M:j].product()>=R):
-            y[j]=1
-        # temp = 1
-        # for k in range(1,M+1):
-        #     temp *= rates[j-k]
-        #     if temp >= R:
-        #         y[j] = 1
-        #         break
+        # if(rates.iloc[j-M:j].product()>=R):
+        #     y[j]=1
+        temp = 1
+        for k in range(1,M+1):
+            temp *= rates[j-k]
+            if temp >= R:
+                y[j] = 1
+                break
     return y
 
 
@@ -53,8 +55,8 @@ def preprocess(coins,A,B,C,N,M,R):
         df_coin = pd.read_csv(RAW_PATH+coin+".csv")
         df_pre_coin = make_X1(df_coin,A,B,C)
         X = make_X2(df_pre_coin, N)
-        y = make_y(df_pre_coin["change_rate"]+1, M,R)
-        X['y'] = y[:-N-1].astype(int)
+        y = make_y(X["change_rate0"]+1, M,R)
+        X['y'] = y
         total.append(X[M:-1])
     df_total = pd.concat(total, axis=0,ignore_index=True)
     df_total.to_csv(BASE_PATH+PATH+f"/{PATH.replace('/', '')}_{A}_{B}_{C}_{N}_{M}_{int(R*10)}_.csv", index=False)
@@ -62,8 +64,9 @@ def preprocess(coins,A,B,C,N,M,R):
     print("y==1 비율",(df_total['y']==1).mean())
 
 
+
 if __name__ == "__main__":
     df_coins = pd.read_csv("coin/target_coins.csv")
     coins=df_coins["market"].tolist()
 
-    preprocess(coins,2,0,1,4,2,1.2)
+    preprocess(coins,1,1,1,4,1,1.1)

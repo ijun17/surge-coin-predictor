@@ -2,13 +2,14 @@ import pandas as pd
 from joblib import dump, load
 import json
 import requests
-import datetime
+from datetime import datetime
 import os
 import coin_preproc as cp
 
 
-model_path = "coin/model/model_100_18_days_2_0_1_4_2_12_.pkl"
-model = load(model_path)
+BASE_PATH = "coin/model/"
+model_name = "model_100_18_days_2_0_1_4_2_12_.pkl"
+model = load(BASE_PATH+model_name)
 coins=pd.read_csv("coin/target_coins.csv")["market"]
 
 TYPE = "days"
@@ -26,8 +27,21 @@ def req(url):
     return pd.DataFrame(json.loads(response.text))
 
 
+def saveData(coins, y_true, y_pred,ACCURACY, PRECISION):
+    coins_json = json.dumps(coins.to_list())
+    y_true_json = json.dumps(y_true.to_dict(orient='list'))
+    y_pred_json = json.dumps(y_pred.to_dict(orient='list'))
+
+    js_text = f"const coins = {coins_json}, y_true={y_true_json}, y_pred={y_pred_json},N={N},M={M},R={R},DATE='{datetime.now()}',ACCURACY={ACCURACY},PRECISION={PRECISION};"
+    # 파일을 쓰기 모드로 열기 (파일이 없으면 새로 생성됨)
+    with open("web/data.js", 'w') as file:
+        # 파일에 데이터 쓰기
+        file.write(js_text)
+
 def req_data(coins):
     total = []
+    test = []
+    trues = []
     y_pred=pd.DataFrame()
     y_true=pd.DataFrame()
     true_count=0
@@ -35,14 +49,17 @@ def req_data(coins):
     TN=0
     FP=0
     FN=0
+    COUNT = 100
     for coin in coins:
-        df_coin = req(f"https://api.upbit.com/v1/candles/{TYPE}?market={coin}&count={N*10}")
+        df_coin = req(f"https://api.upbit.com/v1/candles/{TYPE}?market={coin}&count={COUNT}")
         df_pre_coin = cp.make_X1(df_coin,A,B,C)
         X = cp.make_X2(df_pre_coin, N)
-        y = cp.make_y(X['change_rate0']+1, M,R)
+        y = cp.make_y(X["change_rate0"]+1, M,R)
         y_true[coin] = y
         y_pred[coin] = model.predict(X)
         total.append(X.loc[0:0])
+        test.append(X.iloc[M:])
+        trues.append(y.iloc[M:])
         true_count += (y_true[coin].loc[M:]==y_pred[coin].loc[M:]).sum()
         for i in range(M,len(y_true)):
             if y_pred[coin][i] == 1 and y_true[coin][i] == 1:
@@ -63,10 +80,17 @@ def req_data(coins):
     print(y_true)
     print("-----------score-----------")
     print("TP:",TP,"TN:",TN,"FP:",FP,"FN:",FN)
-    print("정확도:",(TP+TN)/(TP+TN+FP+FN))
-    print("정밀도:",(TP)/(TP+FP))
-    
-        
+    ACCURACY=(TP+TN)/(TP+TN+FP+FN)
+    PRECISION=(TP)/(TP+FP)
+    print("정확도:",ACCURACY)
+    print("정밀도:",PRECISION)
+    #save data
+    saveData(coins, y_true, y_pred,ACCURACY, PRECISION)
+    # save validation
+    df_test = pd.concat(test, axis=0,ignore_index=True)
+    df_trues = pd.concat(trues, axis=0,ignore_index=True)
+    df_test['y'] = df_trues
+    df_test.to_csv(BASE_PATH+"test_"+model_name+".csv", index=False)
 
 
 
@@ -74,5 +98,4 @@ if __name__ == "__main__":
     df_coins = pd.read_csv("coin/target_coins.csv")
     coins=df_coins["market"]
     # print(coins)
-    
     req_data(coins)
