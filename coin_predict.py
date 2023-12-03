@@ -34,7 +34,7 @@ def saveData(coins, y_true, y_pred,ACCURACY, PRECISION):
     y_pred_json = json.dumps(y_pred.to_dict(orient='list'))
 
     js_text = f"const coins = {coins_json}, y_true={y_true_json}, y_pred={y_pred_json},N={N},M={M},R={R},DATE='{datetime.now()}',ACCURACY={ACCURACY},PRECISION={PRECISION};"
-    with open("web/coin/data.js", 'w') as file:
+    with open("web/coins/data.js", 'w') as file:
         file.write(js_text)
 
 def req_data(coins):
