@@ -1,6 +1,5 @@
 import numpy
 import pandas as pd
-from imblearn.over_sampling import RandomOverSampler
 
 RAW_PATH = "coin/raw/days/"
 BASE_PATH = "coin/preprocessed/"
@@ -14,10 +13,11 @@ def make_X1(df, A,B,C):
     if B>0:
         df_pre_coin["change_trade_rate"] = df["candle_acc_trade_volume"]/df["candle_acc_trade_volume"].shift(-1)
     if C>0:
-        df_pre_coin["price_diff"] = df["high_price"]/df["low_price"]
+        df_pre_coin["price_diff"] = (df["high_price"]/df["low_price"]).round(5)
     
-    # df_pre_coin["low_price"] = df["low_price"]/df["low_price"].shift(-1)
-    return df_pre_coin
+    
+    df_pre_coin["low_price_change_rate"] = df["low_price"]/df["low_price"].shift(-1).round(5)
+    return df_pre_coin[:-1]
 
 def make_X2(df,N):
     result_df = pd.DataFrame()
@@ -68,5 +68,6 @@ def preprocess(coins,A,B,C,N,M,R):
 if __name__ == "__main__":
     df_coins = pd.read_csv("coin/target_coins.csv")
     coins=df_coins["market"].tolist()
-
-    preprocess(coins,1,1,1,4,1,1.1)
+    print(coins)
+    
+    # preprocess(coins,1,1,1,4,1,1.1)
