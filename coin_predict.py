@@ -4,7 +4,6 @@ from joblib import dump, load
 import json
 import requests
 from datetime import datetime
-import os
 import coin_preproc as cp
 
 warnings.filterwarnings("ignore")
@@ -35,16 +34,11 @@ def saveData(coins, y_true, y_pred,ACCURACY, PRECISION):
     y_pred_json = json.dumps(y_pred.to_dict(orient='list'))
 
     js_text = f"const coins = {coins_json}, y_true={y_true_json}, y_pred={y_pred_json},N={N},M={M},R={R},DATE='{datetime.now()}',ACCURACY={ACCURACY},PRECISION={PRECISION};"
-    # 파일을 쓰기 모드로 열기 (파일이 없으면 새로 생성됨)
     with open("web/coin/data.js", 'w') as file:
-        # 파일에 데이터 쓰기
         file.write(js_text)
 
 def req_data(coins):
-    TP=0
-    TN=0
-    FP=0
-    FN=0
+    TP,TN,FP,FN=0,0,0,0
     COUNT = 200
     total = []
     y_pred=pd.DataFrame({coin: [-1] * COUNT for coin in coins})

@@ -31,10 +31,10 @@ for(let coin of coins){
     for(let i=0; i<40 && y_pred[coin][i]!=-1; i++){
         const UP = y_pred[coin][i]==1
         if(UP && !recentUP){
-            lastUP = `<span style="color:red">${i}일전 상승을 예측했습니다</span>`
+            lastUP = `<span style="color:brown">${i}일전 ▲</span>`
             recentUP = true
         }
-        let color = UP ? "red" : "blue"
+        let color = UP ? "red" : "royalblue"
         let symbol = UP ? "▲" : "▼"
         chart+=`<span style="color:${color};">${symbol}<span>`
     }
