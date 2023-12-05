@@ -57,7 +57,9 @@ if __name__ == "__main__":
     df_coins = pandas.read_csv("coin/target_coins.csv")
     coins=df_coins["market"]
     # collectCoin(coins[52:], TYPES[1])
-    verifyCoin(coins, TYPES[1])
+    # verifyCoin(coins, TYPES[1])
+    print(coins.tolist())
+    print(len(coins))
 
 
 """

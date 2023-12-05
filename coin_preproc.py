@@ -14,8 +14,6 @@ def make_X1(df, A,B,C):
         df_pre_coin["change_trade_rate"] = df["candle_acc_trade_volume"]/df["candle_acc_trade_volume"].shift(-1)
     if C>0:
         df_pre_coin["price_diff"] = (df["high_price"]/df["low_price"]).round(5)
-    
-    
     df_pre_coin["low_price_change_rate"] = df["low_price"]/df["low_price"].shift(-1).round(5)
     return df_pre_coin[:-1]
 
