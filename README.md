@@ -1,12 +1,13 @@
-# 업비트 API를 이용한 코인 데이터 수집 및 학습
+# 잡코인 급상승 예측 시스템
 
+업비트 API를 이용한 코인 데이터 수집 및 학습
 
-## 목차
-1. 타겟 코인 선정
-2. 타겟 코인 데이터 수집
-3. 전처리
-4. 학습
-5. 평가
+## 순서
+1. coin_selector.py
+2. coin_collector.py
+3. coin_preproc.py
+4. coin_train.ipynb
+5. coin_predict.py
 
 
 ## 1. coin_selector.py
@@ -36,14 +37,10 @@ N,M,R을 조절하면서 전처리
 * R: 현재로부터 M일 이후까지 가격이 몇배 증가하는지
 * 파일 이름 형식 - {type}\_{N}_{M}_{R}.csv
 
-## 4. 학습
+## 4. coin_train.ipynb
 
 학습은 랜덤 포레스트로 진행
 
-모델이름 - model_100_20_days_1_1_1_4_2_12_.csv
+## 5. coin_predict.py
 
-지도학습
-
-## 5. 평가
-
-## 시스템에 적용
+서버에 배포해서 캔들이 업데이트 될때마다 실행시키면 됨
